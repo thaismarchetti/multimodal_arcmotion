@@ -411,34 +411,6 @@ while flag_tracker:
                 print('std')
                 move_ok = False
 
-            #elif head_distance_compensation > 100:
-            #p1 =  m_robot_new1[0, -1], m_robot_new1[1, -1], m_robot_new1[2, -1], angles1[0], angles1[1], angles1[2]
-
-
-            #m_robot_new2 = M_ref_tracker_in_robot @ m_change_robot2ref_target2
-            #scale, shear, angles, translate, perspective = tf.decompose_matrix(m_robot_new2)
-            #angles = np.degrees(angles)
-            #angles2 = angles
-            #p2 =  m_robot_new2[0, -1], m_robot_new2[1, -1], m_robot_new2[2, -1], angles2[0], angles2[1], angles2[2]
-
-            #pc = 756,-90,188, angles[0], angles[1], angles[2] #ponto central da cabeça
-            #pm = ((p1[0]+p2[0])/2, (p1[1]+p2[1])/2,(p1[2]+p2[2])/2 ) #ponto médio da trajetória
-
-            #versorfator1_calculado = Versores(pc,p1)
-            #p11 = p1[0]+versorfator1_calculado[0],p1[1]+versorfator1_calculado[1],p1[2]+versorfator1_calculado[2], angles1[0], angles1[1], angles1[2]
-
-            #import numpy
-            #versorfator2 = Versores(pc,pm)
-            #versorfator2 = numpy.array(versorfator2)
-            #newarr = versorfator2*2
-            #pontointermediario = pm[0]+newarr[0],pm[1]+newarr[1],pm[2]+newarr[2]
-
-            #versorfator3 = Versores(pc,p2)
-            #p22 = p2[0]+versorfator3[0],p2[1]+versorfator3[1],p2[2]+versorfator3[2], angles2[0], angles2[1], angles2[2]
-            #p22_arc = p2[0]+versorfator3[0],p2[1]+versorfator3[1],p2[2]+versorfator3[2], angles2[0], angles2[1], angles2[2],0
-
-            #type_arc = 0
-
             else:
                 move_ok = True
 
@@ -478,8 +450,25 @@ while flag_tracker:
 
                 csv_writer.writerow(info)
 
+    actual_point = trck_init_robot.Run()
+    print(actual_point)
 
+    #Cálculo da distância de correção:
 
+    #m_ref = transform_pos_2_matrix(coord_kalman)
+    #ref_tracker_in_robot, M_ref_tracker_in_robot = transform_tracker_2_robot(coord_kalman, M_tracker_2_robot)
+
+    #m_robot_new = M_ref_tracker_in_robot @ m_change_robot2ref_target1
+    #scale, shear, angles, translate, perspective = tf.decompose_matrix(m_robot_new)
+    #angles = np.degrees(angles)
+
+    #correc_point =  m_robot_new[0, -1], m_robot_new[1, -1], m_robot_new[2, -1], angles[0], angles[1], angles[2]
+
+    #sum = (correc_point[0]-actual_point[0])**2+(correc_point[1]-actual_point[1])**2+(correc_point[2]-actual_point[2])**2
+    #head_distance_compensation = pow(sum,0.5)
+    #print('Distância de correção:',head_distance_compensation)
+
+    #if head_distance_compensation < 100
     if i < 150:
         m_ref = transform_pos_2_matrix(coord_kalman)
         ref_tracker_in_robot, M_ref_tracker_in_robot = transform_tracker_2_robot(coord_kalman, M_tracker_2_robot)
@@ -493,10 +482,9 @@ while flag_tracker:
         if move_ok:
             trck_init_robot.SendCoordinates(target)
         print(i)
-        print('ângulos antes:',angles_init)
 
+    #elif i >=100:
     elif i == 150:
-        print('ângulos depois:',angles_init)
         p1 =  m_robot_new[0, -1], m_robot_new[1, -1], m_robot_new[2, -1], angles_init[0], angles_init[1], angles_init[2]
 
         pc = 756,-90,188, angles_init[0], angles_init[1], angles_init[2] #ponto central da cabeça
