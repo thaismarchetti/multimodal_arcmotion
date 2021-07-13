@@ -163,11 +163,11 @@ def Versores(init_point, final_point):
     somaq= vector[0]**2+vector[1]**2+vector[2]**2
     norma = pow(somaq,0.5)
     versor=(vector[0]/norma,vector[1]/norma,vector[2]/norma)
-    versorfator=(versor[0]*50,versor[1]*50,versor[2]*50)
+    versorfator=(versor[0]*100,versor[1]*50,versor[2]*100)
     return versorfator
 
 flag_affine = False
-flag_settarget = False
+flag_settarget = True
 flag_tracker = True
 flag_plot = False
 flag_velo = True
@@ -455,21 +455,20 @@ while flag_tracker:
 
     #Cálculo da distância de correção:
 
-    #m_ref = transform_pos_2_matrix(coord_kalman)
-    #ref_tracker_in_robot, M_ref_tracker_in_robot = transform_tracker_2_robot(coord_kalman, M_tracker_2_robot)
+    m_ref = transform_pos_2_matrix(coord_kalman)
+    ref_tracker_in_robot, M_ref_tracker_in_robot = transform_tracker_2_robot(coord_kalman, M_tracker_2_robot)
 
-    #m_robot_new = M_ref_tracker_in_robot @ m_change_robot2ref_target1
-    #scale, shear, angles, translate, perspective = tf.decompose_matrix(m_robot_new)
-    #angles = np.degrees(angles)
+    m_robot_new = M_ref_tracker_in_robot @ m_change_robot2ref_target1
+    scale, shear, angles, translate, perspective = tf.decompose_matrix(m_robot_new)
+    angles = np.degrees(angles)
 
-    #correc_point =  m_robot_new[0, -1], m_robot_new[1, -1], m_robot_new[2, -1], angles[0], angles[1], angles[2]
+    correc_point =  m_robot_new[0, -1], m_robot_new[1, -1], m_robot_new[2, -1], angles[0], angles[1], angles[2]
 
-    #sum = (correc_point[0]-actual_point[0])**2+(correc_point[1]-actual_point[1])**2+(correc_point[2]-actual_point[2])**2
-    #head_distance_compensation = pow(sum,0.5)
-    #print('Distância de correção:',head_distance_compensation)
+    sum = (correc_point[0]-actual_point[0])**2+(correc_point[1]-actual_point[1])**2+(correc_point[2]-actual_point[2])**2
+    head_distance_compensation = pow(sum,0.5)
+    print('Distância de correção:',head_distance_compensation)
 
-    #if head_distance_compensation < 100
-    if i < 150:
+    if head_distance_compensation < 100:
         m_ref = transform_pos_2_matrix(coord_kalman)
         ref_tracker_in_robot, M_ref_tracker_in_robot = transform_tracker_2_robot(coord_kalman, M_tracker_2_robot)
 
@@ -481,60 +480,63 @@ while flag_tracker:
 
         if move_ok:
             trck_init_robot.SendCoordinates(target)
-        print(i)
+
 
     #elif i >=100:
-    elif i == 150:
-        p1 =  m_robot_new[0, -1], m_robot_new[1, -1], m_robot_new[2, -1], angles_init[0], angles_init[1], angles_init[2]
+    elif head_distance_compensation >= 100:
+        p1 = correc_point
 
-        pc = 756,-90,188, angles_init[0], angles_init[1], angles_init[2] #ponto central da cabeça
+        pc = 756,-90,188, angles[0], angles[1], angles[2] #ponto central da cabeça
 
-        versorfator1_calculado = Versores(pc,p1)
-        p11 = p1[0]+versorfator1_calculado[0],p1[1]+versorfator1_calculado[1],p1[2]+versorfator1_calculado[2], angles_init[0], angles_init[1], angles_init[2]
+        versorfator1_calculado = Versores(pc,actual_point)
+        init_ext_point = actual_point[0]+versorfator1_calculado[0],actual_point[1]+versorfator1_calculado[1],actual_point[2]+versorfator1_calculado[2], actual_point[3], actual_point[4], actual_point[5]
+        print('init_ext_point:', init_ext_point)
 
-        m_robot_new2 = M_ref_tracker_in_robot @ m_change_robot2ref_target2
-        scale, shear, angles2, translate, perspective = tf.decompose_matrix(m_robot_new2)
-        angles2 = np.degrees(angles2)
-        p2 =  m_robot_new2[0, -1], m_robot_new2[1, -1], m_robot_new2[2, -1], angles2[0], angles2[1], angles2[2]
+        #m_robot_new2 = M_ref_tracker_in_robot @ m_change_robot2ref_target2
+        #scale, shear, angles2, translate, perspective = tf.decompose_matrix(m_robot_new2)
+        #angles2 = np.degrees(angles2)
+        #p2 =  m_robot_new2[0, -1], m_robot_new2[1, -1], m_robot_new2[2, -1], angles2[0], angles2[1], angles2[2]
 
-        pm = ((p1[0]+p2[0])/2, (p1[1]+p2[1])/2,(p1[2]+p2[2])/2 ) #ponto médio da trajetória
+        pm = ((p1[0]+actual_point[0])/2, (p1[1]+actual_point[1])/2,(p1[2]+actual_point[2])/2 ) #ponto médio da trajetória
 
         versorfator2 = Versores(pc,pm)
         versorfator2 = np.array(versorfator2)
         newarr = versorfator2*2
         pontointermediario = pm[0]+newarr[0],pm[1]+newarr[1],pm[2]+newarr[2]
 
-        versorfator3 = Versores(pc,p2)
-        p22 = p2[0]+versorfator3[0],p2[1]+versorfator3[1],p2[2]+versorfator3[2], angles2[0], angles2[1], angles2[2]
-        p22_arc = p2[0]+versorfator3[0],p2[1]+versorfator3[1],p2[2]+versorfator3[2], angles2[0], angles2[1], angles2[2],0
+        versorfator3 = Versores(pc,p1)
+        final_ext_point = p1[0]+versorfator3[0],p1[1]+versorfator3[1],p1[2]+versorfator3[2], angles[0], angles[1], angles[2]
+        print('final_ext_point:', final_ext_point)
+        final_ext_point_arc = final_ext_point = p1[0]+versorfator3[0],p1[1]+versorfator3[1],p1[2]+versorfator3[2], angles[0], angles[1], angles[2],0
 
         type_arc = 0
         #p11 = target
 
-        target_arc = pontointermediario+p22_arc
+        target_arc = pontointermediario+final_ext_point_arc
         print(target_arc)
 
         if move_ok:
             trck_init_robot.StopMove()
-            trck_init_robot.SendCoordinatesArc(p11,target_arc)
+            trck_init_robot.SendCoordinatesArc(init_ext_point,target_arc)
 
         #trck_init_robot.SendCoordinates(p11)
 
         #movimento arco
         #movimento linear até o target 1
 
-    else:
-        m_ref = transform_pos_2_matrix(coord_kalman)
-        ref_tracker_in_robot, M_ref_tracker_in_robot = transform_tracker_2_robot(coord_kalman, M_tracker_2_robot)
+    #else:
+        #m_ref = transform_pos_2_matrix(coord_kalman)
+        #ref_tracker_in_robot, M_ref_tracker_in_robot = transform_tracker_2_robot(coord_kalman, M_tracker_2_robot)
 
-        m_robot_new = M_ref_tracker_in_robot @ m_change_robot2ref_target2
-        scale, shear, angles, translate, perspective = tf.decompose_matrix(m_robot_new)
-        angles = np.degrees(angles)
+        #m_robot_new = M_ref_tracker_in_robot @ m_change_robot2ref_target1
+        #scale, shear, angles, translate, perspective = tf.decompose_matrix(m_robot_new)
+        #angles = np.degrees(angles)
 
-        target = m_robot_new[0, -1], m_robot_new[1, -1], m_robot_new[2, -1], angles[0], angles[1], angles[2]
+        #target = m_robot_new[0, -1], m_robot_new[1, -1], m_robot_new[2, -1], angles[0], angles[1], angles[2]
+        #print('target movimentaion:', target)
 
-        if move_ok:
-             trck_init_robot.SendCoordinates(target)
+        #if move_ok:
+             #trck_init_robot.SendCoordinates(target)
 
 
     end = time()
